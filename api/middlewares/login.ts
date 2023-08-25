@@ -1,6 +1,7 @@
 import { InlineKeyboard } from "grammy";
 import MyContext from "../types/my-context";
 import MyConversation from "../types/my-conversation";
+import config from "../config";
 
 export default async function login(
   conversation: MyConversation,
@@ -21,7 +22,7 @@ export default async function login(
 
   if (nextCtx.message?.text) login = parseInt(nextCtx.message?.text.trim());
 
-  await nextCtx.deleteMessage(); // Loginni o'chiramiz
+  nextCtx.deleteMessage(); // Loginni o'chiramiz
 
   const chat_id = ctx.chat?.id as number;
   const message_id = (nextCtx.message?.message_id as number) - 1;
@@ -36,12 +37,12 @@ export default async function login(
   // Parolni olamiz
   nextCtx = await conversation.waitFor(":text");
 
-  await nextCtx.deleteMessage(); // Parolni o'chiramiz
+  nextCtx.deleteMessage(); // Parolni o'chiramiz
 
   if (nextCtx.message?.text) password = nextCtx.message?.text.trim();
 
   // Tokenni olamiz
-  const res = await fetch(process.env.TARGET + "auth/login", {
+  const res = await fetch(config.target + "auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -55,7 +56,7 @@ export default async function login(
   if (success) {
     nextCtx.session.token = data.token;
 
-    await ctx.api.editMessageText(
+    ctx.api.editMessageText(
       chat_id,
       message_id,
       "*Avtorizatsiyadan muvaffaqqiyatli o'tdingiz*",
@@ -65,14 +66,9 @@ export default async function login(
       }
     );
   } else {
-    await ctx.api.editMessageText(
-      chat_id,
-      message_id,
-      "*Login yoki parol xato!*",
-      {
-        reply_markup: new InlineKeyboard().text("🔑 Hisobga kirish", "login"),
-        parse_mode: "Markdown",
-      }
-    );
+    ctx.api.editMessageText(chat_id, message_id, "*Login yoki parol xato!*", {
+      reply_markup: new InlineKeyboard().text("🔑 Hisobga kirish", "login"),
+      parse_mode: "Markdown",
+    });
   }
 }

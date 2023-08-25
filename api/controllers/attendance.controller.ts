@@ -1,13 +1,13 @@
 import { InlineKeyboard } from "grammy";
 import MyContext from "../types/my-context";
 import Absence from "../interfaces/absence-data";
+import config from "../config";
 
 export default async (ctx: MyContext) => {
-  await ctx.answerCallbackQuery("Ozgina kuting...");
+  ctx.answerCallbackQuery("Iltimos, kuting...");
+  ctx.deleteMessage();
 
-  await ctx.deleteMessage();
-
-  const res = await fetch(process.env.TARGET + `education/attendance`, {
+  const res = await fetch(config.target + `education/attendance`, {
     headers: { Authorization: "Bearer " + ctx.session.token },
   });
 
@@ -20,14 +20,22 @@ export default async (ctx: MyContext) => {
     });
   }
 
-  let text = "*Qoldirgan darslaringiz*:\n\n";
+  let text = `*Qoldirgan darslaringiz*: ${data.length} ta\n`;
+
+  let semester = ""; // Semesterlarni ajratish uchun.
 
   data.forEach((item: Absence) => {
     let date = new Date(item.lesson_date * 1000).toLocaleDateString("UZ");
-    text += `${item.semester.name} | *${item.subject.name}* | _${date}_ — \`${item.lessonPair.start_time}\`\n`;
+
+    if (semester !== item.semester.name) {
+      text += `\n*${item.semester.name}\n\n*`;
+      semester = item.semester.name;
+    }
+
+    text += `*${item.subject.name}* | _${date}_ — \`${item.lessonPair.start_time}\`\n`;
   });
 
-  await ctx.reply(text, {
+  ctx.reply(text, {
     reply_markup: new InlineKeyboard().text("🏠 Bosh sahifa", "home"),
     parse_mode: "Markdown",
   });

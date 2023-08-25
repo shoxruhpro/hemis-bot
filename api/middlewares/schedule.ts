@@ -3,13 +3,15 @@ import MyContext from "../types/my-context";
 import MyConversation from "../types/my-conversation";
 import ScheduleData from "../interfaces/schedule-data";
 import uzDate from "../utils/uz-date";
-import { InlineKeyboardButton, KeyboardButton } from "grammy/types";
+import config from "../config";
 
 export default async function schedule(
   conversation: MyConversation,
   ctx: MyContext
 ) {
-  const res = await fetch(process.env.TARGET + "education/schedule", {
+  ctx.answerCallbackQuery("Iltimos, kuting...");
+
+  const res = await fetch(config.target + "education/schedule", {
     headers: {
       Authorization: "Bearer " + ctx.session.token,
     },
@@ -25,22 +27,20 @@ export default async function schedule(
     });
   }
 
-  let week = 0; // Haftalarni ajratish uchun.
-  const weekButtons = data
-    .filter((item: ScheduleData) => {
-      if (week === 0 || item._week !== week) {
-        week = item._week;
-        return true;
-      }
+  const schedules: Record<string, ScheduleData[]> = {};
 
-      return false;
-    })
-    .map(({ weekStartTime, weekEndTime, _week }: ScheduleData) => {
-      const start = uzDate(weekStartTime);
-      const end = uzDate(weekEndTime);
+  data.forEach((item) => {
+    if (!schedules.hasOwnProperty(item._week)) schedules[item._week] = [];
+    schedules[item._week].push(item);
+  });
 
-      return [InlineKeyboard.text(`${start} / ${end}`, `w-${_week}`)];
-    });
+  const weekButtons = Object.keys(schedules).map((key) => {
+    const schedule = schedules[key][0];
+    const start = uzDate(schedule.weekStartTime);
+    const end = uzDate(schedule.weekEndTime);
+
+    return [InlineKeyboard.text(`${start} / ${end}`, `w-${schedule._week}`)];
+  });
 
   weekButtons.push([InlineKeyboard.text("🏠 Bosh menyu", "home")]);
 
@@ -53,26 +53,25 @@ export default async function schedule(
   );
 
   // Haftani olamiz
-  let nextCtx = await conversation.waitForCallbackQuery(/^w-\d+$/);
+  const nextCtx = await conversation.waitForCallbackQuery(/^w-\d+$/);
   const _week = parseInt(nextCtx.callbackQuery?.data?.split("-")[1] as string);
 
   let text = "";
   let weekdayForSplitting = 0; // Hafta kunlarini ajratish uchun.
-  data
-    .filter((item: ScheduleData) => item._week === _week)
-    .forEach((item) => {
-      const weekday = uzDate(item.lesson_date, { weekday: true });
 
-      if (weekdayForSplitting !== item.lesson_date) {
-        text += `\n*${weekday.toUpperCase()}*\n`;
+  schedules[_week].forEach((item) => {
+    const weekday = uzDate(item.lesson_date, { weekday: true });
 
-        weekdayForSplitting = item.lesson_date;
-      }
+    if (weekdayForSplitting !== item.lesson_date) {
+      text += `\n*${weekday.toUpperCase()}*\n`;
 
-      text += `${item.subject.name} | \`${item.lessonPair.start_time} - ${item.lessonPair.end_time}\` | _${item.auditorium.name}_\n`;
-    });
+      weekdayForSplitting = item.lesson_date;
+    }
 
-  await nextCtx.editMessageText(text, {
+    text += `${item.subject.name} | \`${item.lessonPair.start_time} - ${item.lessonPair.end_time}\` | _${item.auditorium.name}_\n`;
+  });
+
+  nextCtx.editMessageText(text, {
     reply_markup: new InlineKeyboard().text("🏠 Bosh menyu", "home"),
     parse_mode: "Markdown",
   });

@@ -1,9 +1,10 @@
 import { InlineKeyboard } from "grammy";
 import MyContext from "../types/my-context";
+import config from "../config";
 
 export default async (ctx: MyContext) => {
   if (!ctx.session.document_id) {
-    const res = await fetch(process.env.TARGET + "student/document", {
+    const res = await fetch(config.target + "student/document", {
       headers: { Authorization: `Bearer ${ctx.session.token}` },
     });
 
@@ -19,5 +20,5 @@ export default async (ctx: MyContext) => {
     }
   }
 
-  await ctx.editMessageText("*Hujjatlar*", { parse_mode: "Markdown" });
+  ctx.editMessageText("*Hujjatlar*", { parse_mode: "Markdown" });
 };

@@ -1,12 +1,13 @@
 import { InlineKeyboard } from "grammy";
 import MyContext from "../types/my-context";
 import mainMenu from "../middlewares/main-menu";
+import config from "../config";
 
 export default async (ctx: MyContext) => {
-  let keyboard;
-  await ctx.deleteMessage();
+  ctx.deleteMessage();
 
-  let text = `*${process.env.NAME}*\n*HEMIS Student axborot tizimi*\n\n`;
+  let keyboard;
+  let text = `*${config.name}*\n*HEMIS Student axborot tizimi*\n\n`;
 
   if (!ctx.session.token) {
     text += "_Foydalanish uchun avval hisobingizga kiring._";
@@ -15,7 +16,7 @@ export default async (ctx: MyContext) => {
     keyboard = mainMenu;
   }
 
-  await ctx.reply(text, {
+  ctx.reply(text, {
     reply_markup: keyboard,
     parse_mode: "Markdown",
   });

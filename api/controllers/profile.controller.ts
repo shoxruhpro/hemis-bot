@@ -1,17 +1,19 @@
 import { InlineKeyboard } from "grammy";
 import MyContext from "../types/my-context";
 import uzDate from "../utils/uz-date";
+import config from "../config";
 
 export default async (ctx: MyContext) => {
-  const res = await fetch(process.env.TARGET + "account/me", {
+  ctx.answerCallbackQuery("Iltimos, kuting...");
+  ctx.deleteMessage();
+
+  const res = await fetch(config.target + "account/me", {
     headers: {
       Authorization: "Bearer " + ctx.session.token,
     },
   });
 
   const { data, success } = await res.json();
-
-  await ctx.deleteMessage();
 
   if (!success) {
     return await ctx.editMessageText("*Hisobingizga qayta kiring!*", {
@@ -35,7 +37,7 @@ export default async (ctx: MyContext) => {
 ▪️ *Guruh*: ${data.group.name}
 `;
 
-  await ctx.replyWithPhoto(data.image, {
+  ctx.replyWithPhoto(data.image, {
     caption: caption,
     reply_markup: new InlineKeyboard()
       .text("🔐 Parolni o'zgartirish", "update-password")

@@ -1,6 +1,5 @@
 import { Bot, GrammyError, HttpError, session } from "grammy";
 import { conversations, createConversation } from "@grammyjs/conversations";
-import { config } from "dotenv";
 
 import homeController from "./controllers/home.controller";
 import loginController from "./controllers/login.controller";
@@ -15,9 +14,9 @@ import type MyContext from "./types/my-context";
 import schedule from "./middlewares/schedule";
 import scheduleController from "./controllers/schedule.controller";
 
-config();
+import config from "./config";
 
-const bot = new Bot<MyContext>(process.env.TOKEN as string);
+const bot = new Bot<MyContext>(config.token);
 
 // Middlewares
 bot.use(session({ initial }));
@@ -35,22 +34,31 @@ bot.callbackQuery("update-password", passwordController); // Parolni o'zgaritiri
 bot.callbackQuery("schedule", scheduleController); // Dars jadvalini olish uchun
 
 bot.on("message", async (ctx) => {
-  await ctx.reply(
+  ctx.reply(
     "Nimadir noto'g'ri ketdi. /start buyrug'i yordamida botni qayta ishga tushiring."
   );
 });
 
-bot.catch((err) => {
-  const ctx = err.ctx;
-  console.error(`Error while handling update ${ctx.update.update_id}:`);
-  const e = err.error;
-  if (e instanceof GrammyError) {
-    console.error("Error in request:", e.stack);
-  } else if (e instanceof HttpError) {
-    console.error("Could not contact Telegram:", e);
+bot.catch(async (errorHandler) => {
+  const ctx = errorHandler.ctx;
+
+  // ctx.reply(
+  //   "Nimadir noto'g'ri ketdi. /start buyrug'i yordamida botni qayta ishga tushiring."
+  // );
+
+  const { error } = errorHandler;
+
+  if (error instanceof GrammyError) {
+    console.error("Error in request:", error.stack);
+  } else if (error instanceof HttpError) {
+    console.error("Could not contact Telegram:", error);
   } else {
-    console.error("Unknown error:", e);
+    console.error("Unknown error:", error);
   }
 });
 
-bot.start({ drop_pending_updates: true });
+// Polling
+// bot.start({ drop_pending_updates: true });
+
+// Webhook
+export default bot;

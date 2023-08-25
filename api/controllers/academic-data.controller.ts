@@ -1,12 +1,13 @@
 import { InlineKeyboard, InputFile } from "grammy";
 import MyContext from "../types/my-context";
+import config from "../config";
 
 export default async (ctx: MyContext) => {
-  await ctx.answerCallbackQuery("Yuklanmoqda...");
-  await ctx.deleteMessage();
+  ctx.answerCallbackQuery("Yuklanmoqda...");
+  ctx.deleteMessage();
 
   const res = await fetch(
-    process.env.TARGET +
+    config.target +
       `student/document-download?id=${ctx.session.document_id}&type=academic_data`,
     {
       headers: { Authorization: "Bearer " + ctx.session.token },
@@ -22,7 +23,7 @@ export default async (ctx: MyContext) => {
 
   const buffer = await res.arrayBuffer();
 
-  await ctx.replyWithDocument(
+  ctx.replyWithDocument(
     new InputFile(new Uint8Array(buffer), "Reyting daftarchasi.pdf"),
     {
       reply_markup: new InlineKeyboard().text("🏠 Bosh sahifa", "home"),

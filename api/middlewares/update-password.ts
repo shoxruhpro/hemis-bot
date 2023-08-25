@@ -6,7 +6,10 @@ export default async function updatePassword(
   conversation: MyConversation,
   ctx: MyContext
 ) {
-  await ctx.reply("*Yangi parolni kiriting*", {
+  const {
+    message_id,
+    chat: { id: chat_id },
+  } = await ctx.reply("*Yangi parolni kiriting*", {
     reply_markup: new InlineKeyboard().text("🔙 Bekor qilish", "home"),
     parse_mode: "Markdown",
   });
@@ -14,6 +17,7 @@ export default async function updatePassword(
   // Parolni olamiz
   const nextCtx = await conversation.waitFor(":text");
   const password = nextCtx.message?.text.trim();
+  nextCtx.deleteMessage(); // Parolni o'chiramiz
 
   const res = await fetch(process.env.TARGET + "account/update", {
     method: "POST",
@@ -28,12 +32,8 @@ export default async function updatePassword(
     }),
   });
 
-  await nextCtx.deleteMessage(); // Parolni o'chiramiz
-
   const { success } = await res.json();
 
-  const chat_id = ctx.chat?.id as number;
-  const message_id = (nextCtx.message?.message_id as number) - 1;
   let text;
   let keyboard;
 
@@ -47,7 +47,7 @@ export default async function updatePassword(
     keyboard = new InlineKeyboard().text("🔑 Hisobga kirish", "home");
   }
 
-  await ctx.api.editMessageText(chat_id, message_id, text, {
+  ctx.api.editMessageText(chat_id, message_id, text, {
     reply_markup: keyboard,
     parse_mode: "MarkdownV2",
   });

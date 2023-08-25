@@ -1,7 +1,6 @@
 import MyContext from "../types/my-context";
 
 export default async (ctx: MyContext) => {
-  await ctx.deleteMessage();
-  ctx.session.token = null;
+  ctx.deleteMessage();
   await ctx.conversation.enter("login");
 };
